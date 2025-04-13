@@ -19,7 +19,7 @@ def parse_args():
         "--dataset",
         type=str,
         choices=["musique", "2WikiMQA", "hotpotQA"],
-        default="2WikiMQA"
+        default="hotpotQA"
     )
     parser.add_argument("--split", type=str, default=None)
     args = parser.parse_args()
@@ -28,10 +28,17 @@ def parse_args():
 
 def parse_chunks(dataset: MultiHopDataset):
     for sample in dataset:
-        id = sample["id"]
-        for idx, chunk in enumerate(sample["chunks"]):
-            cid = f"{id}-{idx:02d}"
-            yield {"id": cid, "text": chunk}
+        try:
+            id = sample["id"]
+            chunks = sample.get("chunks", [])
+            if not chunks:
+                continue
+            for idx, chunk in enumerate(chunks):
+                cid = f"{id}-{idx:02d}"
+                yield {"id": cid, "text": chunk}
+        except Exception as e:
+            print(f"Error processing sample: {e}")
+            continue
 
 
 def purify_text(text: str):
@@ -70,13 +77,25 @@ def main(opt: argparse.Namespace):
         split = [opt.split]
     else:
         split = ["train", "valid", "test"]
+    
+    # 针对hotpotQA调整分割名称
+    if opt.dataset == "hotpotQA":
+        split_mapping = {"valid": "dev"}
+    else:
+        split_mapping = {}
+    
     chunks = []
     for s in split:
         try:
-            dataset = get_dataset(opt.dataset, s)
+            # 使用映射调整分割名称
+            actual_split = split_mapping.get(s, s)
+            print(f"Loading dataset: {opt.dataset} - {s} (file: {actual_split}.json)")
+            dataset = get_dataset(opt.dataset, actual_split)
+            print(f"Loaded {len(dataset)} samples.")
             for d in parse_chunks(dataset):
                 chunks.append(d)
-        except:
+        except Exception as e:
+            print(f"Failed on split {s}: {e}")
             continue
     chunks = merge_chunks(chunks)
     output_dir = os.path.join(CORPUS_DATA_PATH, opt.dataset, "corpus.jsonl")

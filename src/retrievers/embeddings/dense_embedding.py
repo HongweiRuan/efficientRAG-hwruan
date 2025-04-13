@@ -25,12 +25,15 @@ class DenseEmbedding(BaseEmbedding):
         self.pooling_type = pooling_type
 
     def instantiate(self):
+        from transformers import AutoTokenizer, AutoModel
+        import torch
+
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name_or_path)
         self.model = AutoModel.from_pretrained(self.model_name_or_path)
-        self.model.eval()
-        self.model = self.model.cuda()
-        if self.fp16:
-            self.model = self.model.half()
+
+        # 设置设备
+        self.device = torch.device("cpu")
+        self.model = self.model.to(self.device)
 
     def embed(self, query: str):
         if self.model is None:
@@ -50,7 +53,7 @@ class DenseEmbedding(BaseEmbedding):
                 truncation=True,
                 max_length=512,
             )
-            inputs = {k: v.cuda() for k, v in inputs.items()}
+            inputs = {k: v.to(self.device) for k, v in inputs.items()}
             outputs = self.model(**inputs)
             embeddings = self.pooling(outputs.last_hidden_state, inputs["attention_mask"])
             embeddings = embeddings.cpu().numpy()

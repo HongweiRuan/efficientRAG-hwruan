@@ -2,6 +2,7 @@ import argparse
 import os
 import pickle
 import sys
+import random
 
 from embeddings import Embedder, ModelTypes
 
@@ -23,6 +24,8 @@ def parse_args():
     parser.add_argument("--batch_size", type=int, default=1024)
     parser.add_argument("--chunk_size", type=int, default=int(2e6), help="passages per chunk")
     parser.add_argument("--test_mode", action="store_true", help="Run in test mode")
+    parser.add_argument("--sample_ratio", type=float, default=1.0, help="Ratio of data to sample (0.0-1.0)")
+    parser.add_argument("--sample_size", type=int, default=None, help="Fixed number of samples to use (overrides sample_ratio)")
     args = parser.parse_args()
     return args
 
@@ -37,6 +40,16 @@ def main(opts):
     )
     print(f"Loading passages from {opts.passages}")
     data = load_passages(opts.passages)
+    
+    # Sample the data if needed
+    if opts.sample_size is not None and opts.sample_size < len(data):
+        print(f"Sampling {opts.sample_size} passages (out of {len(data)})")
+        data = random.sample(data, opts.sample_size)
+    elif opts.sample_ratio < 1.0:
+        sample_size = int(len(data) * opts.sample_ratio)
+        print(f"Sampling {sample_size} passages ({opts.sample_ratio:.2%} of {len(data)})")
+        data = random.sample(data, sample_size)
+    
     output_dir = opts.output_dir
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)

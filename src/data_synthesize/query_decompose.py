@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -42,6 +43,11 @@ class DatasetParser:
                 try:
                     result = task.result()
                 except Exception as e:
+                    sample_id = samples[idx].get("id", "unknown")
+                    print(f"Failed to synthesize sample {sample_id}: {e}")
+                    
+                    traceback.print_exc()
+
                     result = {"state": "failed"}
                 results.append((result, idx))
         results = [result for result, idx in sorted(results, key=lambda x: x[1])]
@@ -49,10 +55,17 @@ class DatasetParser:
 
     def process_sample(self, sample: dict) -> dict:
         prompt = self.parse_sample(sample)
+
+        print(f"📝 Prompt for sample {sample['id']}:\n{prompt}\n{'='*50}")
+
         check_if_valid = self.check_if_valid(sample)
         result = ask_model(
             self.model, prompt, mode="chat", type="json", check_if_valid=check_if_valid
         )
+
+        if result is None:
+            raise ValueError("ask_model returned None")
+    
         result = self.post_process(result, sample)
         return result
 
@@ -314,6 +327,7 @@ def parse_args():
     parser.add_argument("--workers", type=int, default=10)
     parser.add_argument("--starting", type=int, default=0)
     parser.add_argument("--ending", type=int, default=None)
+    parser.add_argument("--max_samples", type=int, default=None)
     args = parser.parse_args()
     return args
 
@@ -331,6 +345,9 @@ def get_parser(dataset: str, model: str, split: str) -> DatasetParser:
 
 def main(opt: argparse.Namespace):
     parser = get_parser(opt.dataset, opt.model, opt.split)
+
+    if opt.max_samples is not None:
+        opt.ending = opt.starting + opt.max_samples
 
     output_dir = os.path.join(SYNTHESIZED_DECOMPOSED_DATA_PATH, opt.dataset)
     os.makedirs(output_dir, exist_ok=True)

@@ -10,8 +10,8 @@ Efficient RAG is a new framework to train Labeler and Filter to learn to conduct
 
 ## Updates
 
-* 2024-09-12 open source the code
-* 2025-03-04 release our data
+- 2024-09-12 open source the code
+- 2025-03-04 release our data
 
 ## Setup
 
@@ -43,7 +43,11 @@ pip install -r requirements.txt
 
 2. Download the retriever model [Contriever](https://huggingface.co/facebook/contriever-msmarco) and base model [DeBERTa](https://huggingface.co/microsoft/deberta-v3-large), put them under `model_cache`
 
-3. Prepare the corpus by extract documents and construct embedding.
+```bash
+ python download_models.py
+```
+
+1. Prepare the corpus by extract documents and construct embedding.
 
 ```bash
 python src/retrievers/multihop_data_extractor.py --dataset hotpotQA
@@ -51,12 +55,26 @@ python src/retrievers/multihop_data_extractor.py --dataset hotpotQA
 
 ```bash
 python src/retrievers/passage_embedder.py \
-    --passages data/corpus/hotpotQA/corpus.jsonl \
-    --output_dir data/corpus/hotpotQA/contriever \
-    --model_type contriever
+  --passages data/corpus/hotpotQA/corpus.jsonl \
+  --output_dir data/corpus/hotpotQA/contriever \
+  --model_type contriever \
+  --model_name_or_path model_cache/facebook/contriever-msmarco/models--facebook--contriever-msmarco/snapshots/abe8c1493371369031bcb1e02acb754cf4e162fa \
+  --batch_size 32 \
+  --sample_ratio 0.1
 ```
 
 4. Deploy [LLaMA-3-70B-Instruct](https://huggingface.co/meta-llama/Meta-Llama-3-70B-Instruct) with [vLLM](https://github.com/vllm-project/vllm) framework, and configure it in `src/language_models/llama.py`
+
+OpenAI-compatible API Server
+
+```bash
+python3 -m vllm.entrypoints.openai.api_server \
+    --model meta-llama/Llama-3.1-8B-Instruct \
+    --served-model-name llama3 \
+    --host 0.0.0.0 \
+    --port 8000 \
+    --max-model-len 8192
+```
 
 ### 2. Training Data Construction
 
@@ -167,6 +185,7 @@ python src/efficientrag_retrieve.py \
 ```
 
 Use LLaMA-3-8B-Instruct as generator
+
 ```bash
 python src/efficientrag_qa.py \
     --fpath <<MODEL_INFERENCE_RESULT>> \

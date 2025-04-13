@@ -71,10 +71,7 @@ class MultiHopDataset(Dataset):
         return None
 
     def get_answer(self, sample: dict) -> str:
-        return sample["answer"]
-
-    def get_answer(self, sample: dict) -> str:
-        return sample["answer"]
+        return sample.get("answer", "")
 
     def get_id(self, sample: dict) -> str:
         return sample["id"]
@@ -108,31 +105,26 @@ class HotpotQADataset(MultiHopDataset):
         super().__init__(data_path)
 
     def get_supporting_facts(self, sample: dict) -> list[ChunkInfo]:
-        titles = list(set(sample["supporting_facts"]["title"]))
-        supporting_facts = []
-        for title in titles:
-            idx = sample["context"]["title"].index(title)
-            sentences = sample["context"]["sentences"][idx]
-            chunk = self.process_chunk(title, sentences)
-            info = ChunkInfo(idx, title, chunk)
-            supporting_facts.append(info)
-        return supporting_facts
+        supporting_titles = [fact[0] for fact in sample.get("supporting_facts", [])]
+        chunks = self.get_chunks(sample)
+        return [chunk for chunk in chunks if chunk.title in supporting_titles]
 
     def get_chunks(self, sample: dict) -> list[ChunkInfo]:
         chunks = []
-        for idx, (title, context) in enumerate(
-            zip(sample["context"]["title"], sample["context"]["sentences"])
-        ):
-            chunk = self.process_chunk(title, context)
+        for idx, (title, sentences) in enumerate(sample["context"]):
+            chunk = self.process_chunk(title, sentences)
             info = ChunkInfo(idx, title, chunk)
             chunks.append(info)
         return chunks
 
     def get_type(self, sample: dict) -> str:
-        type = sample["type"]
+        type = sample.get("type", "")
         if type == "bridge":
             return "compose"
         return type
+
+    def get_id(self, sample: dict) -> str:
+        return sample["_id"]
 
     def get_hop(self, sample: dict) -> str:
         return 2
@@ -224,7 +216,7 @@ class MuSiQueDataset(MultiHopDataset):
         return None
 
     def get_hop(self, sample: dict) -> str:
-        return int(sample[id][0])
+        return int(sample["id"][0])
 
 
 def get_dataset(dataset: AllDatasets, split: str) -> MultiHopDataset:
