@@ -2,6 +2,7 @@ from .aoai import AOAI
 from .base import LanguageModel
 from .deepseek import DeepSeek
 from .llama import LlamaServer
+from .qwen import QwenServer
 
 MODEL_DICT = {
     "gpt35": "gpt-35-turbo-1106",
@@ -9,6 +10,7 @@ MODEL_DICT = {
     "llama": "Meta-Llama-3-70B-Instruct",
     "llama-8B": "Meta-Llama-3-8B-Instruct",
     "deepseek": "deepseek-chat",
+    "qwen": "qwen2.5:7b",
 }
 
 
@@ -22,5 +24,7 @@ def get_model(model_name: str, **kwargs) -> LanguageModel:
         return DeepSeek(model=model_name, **kwargs)
     elif "llama" in model_name.lower():
         return LlamaServer(model=model_name, **kwargs)
+    elif "qwen" in model_name.lower():
+        return QwenServer(model=model_name, **kwargs)
     else:
         raise NotImplementedError(f"Model {model_name} not implemented")

@@ -81,12 +81,29 @@ def ask_model_in_parallel(
 
 def get_type_parser(type: str) -> Callable:
     def json_parser(result: str):
-        # pattern = r"```json(.*?)```"
-        pattern = r"{.*?}"
-        matches = re.findall(pattern, result, re.DOTALL)
-        if matches:
-            result = matches[0].strip()
-        return json.loads(result)
+        if not isinstance(result, str):
+            raise ValueError("Expected string result from model")
+
+        # Step 1: remove ```json ``` wrapper
+        if result.strip().startswith("```json"):
+            result = result.strip("` \n")
+            result = result[len("json"):].strip()
+        elif result.strip().startswith("```"):
+            result = result.strip("` \n")
+
+        # Step 2: try to extract JSON (try to get the first curly brace enclosed content)
+        json_match = re.search(r"{[\s\S]*}", result)
+        if json_match:
+            json_str = json_match.group(0)
+        else:
+            json_str = result  # fallback: try the original content
+
+        # Step 3: try to parse JSON
+        try:
+            return json.loads(json_str)
+        except Exception as e:
+            print(f"⚠️ Failed to parse JSON:\n{json_str}\nError: {e}")
+            return None
 
     def text_parser(result: str):
         return result
