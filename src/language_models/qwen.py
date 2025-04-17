@@ -27,7 +27,7 @@ class QwenServer(LanguageModel):
                 timeout=60
             )
             result = response.choices[0].message.content
-            print(f"🔍 Raw LLM response:\n{result}\n{'='*40}")
+            # print(f"🔍 Raw LLM response:\n{result}\n{'='*40}")
             return result or "[EMPTY]"
         except Exception as e:
             print(f"⚠️ LLM call failed: {e}")

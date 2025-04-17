@@ -74,6 +74,10 @@ class NextQueryFilter:
             model = larger_model
         else:
             model = self.model
+        
+        for subq_id, subq in sample["decomposed_questions"].items():
+            print(f"🔍 subq_id: {subq_id}, dependency: {subq.get('dependency', None)}")
+        
         for subq_id, subq in sample["decomposed_questions"].items():
             if len(subq["dependency"]) == 0:
                 subq["filtered_query"] = sample["question"]
@@ -87,6 +91,7 @@ class NextQueryFilter:
                 break
             # print('\n\n'.join(prompt_list) + '\n\n')
             for prompt, subq_id in zip(prompt_list, cur_sub_question_list):
+                # print(f"\n🧪 Prompt for subq {subq_id}:\n{prompt}\n")
                 result = ask_model(
                     model,
                     prompt,
@@ -181,7 +186,8 @@ class NextQueryFilter:
         return build_prompt_template_func(sample, dependency)
 
     def build_prompt_template_hotpot(self, sample: dict, dependency: list[str]) -> str:
-        raise NotImplementedError()
+        prompt_template = QUERY_LABEL_COMPOSITIONAL_HOTPOT
+        return prompt_template
 
     def build_prompt_template_2wiki(self, sample: dict, dependency: list[str]) -> str:
         # Comparison type as already been done in the previous step
@@ -252,6 +258,7 @@ def main(opt: argparse.Namespace):
     output_path = os.path.join(
         SYNTHESIZED_NEXT_QUERY_DATA_PATH, opt.dataset, f"{opt.split}.jsonl"
     )
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w+", encoding="utf-8") as f:
         filtered_query_list = filter.parse(workers=opt.workers)
         for filtered_sample in filtered_query_list:

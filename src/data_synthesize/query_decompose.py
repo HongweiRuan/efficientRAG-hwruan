@@ -56,7 +56,7 @@ class DatasetParser:
     def process_sample(self, sample: dict) -> dict:
         prompt = self.parse_sample(sample)
 
-        print(f"📝 Prompt for sample {sample['id']}:\n{prompt}\n{'='*50}")
+        # print(f"📝 Prompt for sample {sample['id']}:\n{prompt}\n{'='*50}")
 
         check_if_valid = self.check_if_valid(sample)
         result = ask_model(

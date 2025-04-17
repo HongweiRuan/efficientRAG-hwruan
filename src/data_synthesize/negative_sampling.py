@@ -60,6 +60,7 @@ def parse_args():
     )
     parser.add_argument("--split", type=str, default="demo")
     parser.add_argument("--retriever", type=str, choices=ModelTypes.keys(), default="contriever")
+    parser.add_argument("--model_name_or_path", type=str, default=None, help="Path to local pretrained model")
     args = parser.parse_args()
     return args
 
@@ -72,17 +73,21 @@ def main(opts: argparse.Namespace):
         embedding_path = os.path.join(CORPUS_DATA_PATH, opts.dataset, "contriever")
     else:
         raise NotImplementedError(f"Retriever {opts.retriever} not implemented")
+    
+    model_path = opts.model_name_or_path or ModelCheckpointMapping[opts.retriever]
 
     retriever = Retriever(
         passage_path=passage_path,
         passage_embedding_path=embedding_path,
         index_path_dir=embedding_path,
         model_type=opts.retriever,
-        model_path=ModelCheckpointMapping[opts.retriever],
+        model_path=model_path,
     )
+    
     subq_data_path = os.path.join(SYNTHESIZED_NEXT_QUERY_EXTRACTED_DATA_PATH, opts.dataset, f"{opts.split}.jsonl")
     samples = load_jsonl(subq_data_path)
     output_data_path = os.path.join(SYNTHESIZED_NEGATIVE_SAMPLING_DATA_PATH, opts.dataset, f"{opts.split}.jsonl")
+    os.makedirs(os.path.dirname(output_data_path), exist_ok=True)
     with open(output_data_path, "w+", encoding="utf-8") as f:
         for sample in negative_sampling(retriever, samples):
             d = json.dumps(sample, ensure_ascii=False)

@@ -98,6 +98,12 @@ python src/data_synthesize/token_labeling.py \
     --model llama3
 ```
 
+use this command to install en_core_web_sm
+
+```
+python -m spacy download en_core_web_sm
+```
+
 ```bash
 python src/data_synthesize/token_extraction.py \
     --data_path data/synthesized_token_labeling/hotpotQA/train.jsonl \

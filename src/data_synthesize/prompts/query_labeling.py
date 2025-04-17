@@ -302,3 +302,26 @@ Questions: {question}
 {info_list}
 Your response:
 """.strip()
+
+QUERY_LABEL_COMPOSITIONAL_HOTPOT = """
+You are assigned a multi-hop question refactoring task.
+Given a complex question and a set of known information extracted from earlier sub-questions, your goal is to rewrite the original question by removing information that is already answered and incorporating new facts that are necessary to answer the remaining part of the question. 
+
+You can only generate the question by selecting words from the original question and the provided known information. First, pick words from the original question, then from the known information. You must NOT introduce, modify, or reorder words arbitrarily. The known information is marked with "Info: ".
+
+Return your result in JSON format with:
+- "filtered_query": a string representing the refined question that combines parts of the question and info, without redundant or already-known parts.
+
+Here are some examples:
+
+Questions: Which magazine was started first Arthur's Magazine or First for Women?
+<Known Info> Info: Arthur's Magazine 1844
+Your response:
+```json
+{{"filtered_query": "Which magazine was started first 1844 First for Women"}}
+```
+
+Questions: {question}
+{info_list}
+Your response:
+""".strip()

@@ -59,6 +59,7 @@ MODEL_DICT = {
     "llama": "Meta-Llama-3-70B-Instruct",
     "llama-8B": "Meta-Llama-3-8B-Instruct",
     "deepseek": "deepseek-chat",
+    "qwen": "qwen2.5:7b",
 }
 
 EMBEDDING_ALIAS = {

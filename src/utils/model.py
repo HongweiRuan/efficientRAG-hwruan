@@ -78,25 +78,24 @@ def ask_model_in_parallel(
         results = [result[1] for result in sorted(results, key=lambda r: r[0])]
         return results
 
-
 def get_type_parser(type: str) -> Callable:
     def json_parser(result: str):
         if not isinstance(result, str):
             raise ValueError("Expected string result from model")
 
         # Step 1: remove ```json ``` wrapper
-        if result.strip().startswith("```json"):
-            result = result.strip("` \n")
-            result = result[len("json"):].strip()
-        elif result.strip().startswith("```"):
+        result = result.strip()
+        if result.startswith("```json"):
+            result = result[len("```json"):].strip("` \n")
+        elif result.startswith("```"):
             result = result.strip("` \n")
 
-        # Step 2: try to extract JSON (try to get the first curly brace enclosed content)
-        json_match = re.search(r"{[\s\S]*}", result)
+        # Step 2: try to extract first valid JSON object
+        json_match = re.search(r"\{[\s\S]*?\}", result)
         if json_match:
             json_str = json_match.group(0)
         else:
-            json_str = result  # fallback: try the original content
+            json_str = result  # fallback: try the whole content
 
         # Step 3: try to parse JSON
         try:

@@ -29,6 +29,7 @@ TOKEN_LABEL_PROMPT_TEMPLATE_MAPPING = {
     "musique": TOKEN_LABEL_SYNTHESIZE_FEW_SHOT_PROMPT_MUSIQUE,
     "musique-simple": TOKEN_LABEL_SYNTHESIZE_FEW_SHOT_PROMPT_MUSIQUE,
     "2WikiMQA": TOKEN_LABEL_SYNTHESIZE_FEW_SHOT_PROMPT_WIKIMQA,
+    "hotpotQA": TOKEN_LABEL_SYNTHESIZE_FEW_SHOT_PROMPT_WIKIMQA,
 }
 
 
@@ -46,8 +47,11 @@ class TokenLabeler:
         )
         self.token_labeling_prompt = TOKEN_LABEL_PROMPT_TEMPLATE_MAPPING[dataset]
 
-    def parse(self, starting: int = 0, workers=10) -> list[dict]:
+    def parse(self, starting: int = 0, workers=10, max_samples: int = None) -> list[dict]:
         labeled_data = self.labeled_data[starting:]
+        if max_samples is not None:
+            labeled_data = labeled_data[:max_samples]
+            
         prompts = []
 
         labeled_data = [d for d in labeled_data if d.get("state", None) is None]
@@ -186,7 +190,7 @@ class TokenReLabeler:
                 sample["decomposed_questions"][subq_id]["redundant"] = True
         return labeled_data
 
-    def parse(self, workers: int = 10, redundant_labeled: bool = False) -> list[dict]:
+    def parse(self, workers: int = 10, redundant_labeled: bool = False, max_samples: int = None) -> list[dict]:
         labeled_data = [
             d
             for d in self.labeled_data
@@ -301,6 +305,7 @@ def parse_args():
     parser.add_argument(
         "--relabel", action="store_true", help="Re-label extracted words"
     )
+    parser.add_argument("--max_samples", type=int, default=None, help="Maximum number of samples to process")
     args = parser.parse_args()
     return args
 
@@ -308,16 +313,17 @@ def parse_args():
 def main(opt: argparse.Namespace):
     model = MODEL_DICT[opt.model]
     labeler = TokenLabeler(model, opt.dataset, opt.split)
+    output_dir = os.path.join(SYNTHESIZED_TOKEN_LABELING_DATA_PATH, opt.dataset)
+    os.makedirs(output_dir, exist_ok=True)
     with open(
         os.path.join(
-            SYNTHESIZED_TOKEN_LABELING_DATA_PATH,
-            opt.dataset,
+            output_dir,
             f"{opt.split}.jsonl",
         ),
         "w+",
         encoding="utf-8",
     ) as f:
-        for labeled in labeler.parse(workers=opt.workers):
+        for labeled in labeler.parse(workers=opt.workers, max_samples=opt.max_samples):
             info = json.dumps(labeled, ensure_ascii=False)
             f.write(info + "\n")
 

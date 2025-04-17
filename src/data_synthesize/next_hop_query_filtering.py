@@ -174,7 +174,7 @@ def extract_next_hop_sample_2wiki(sample: dict, sid: str) -> tuple[dict]:
 
 def main(opts: argparse.Namespace):
     data = load_jsonl(opts.data_path)
-
+    
     infos = {
         "comp_rate": 0.0,
         "variation_rate": 0.0,
